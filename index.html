@@ -3209,6 +3209,7 @@ let state = loadLocalBoard();
 let saveTimer = null;
 function save() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  if (applyingRemote) return; // remote update — skip Firestore write-back
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
     showSync('saving', 'Saving…');
@@ -5102,17 +5103,37 @@ document.getElementById('import-file-input').addEventListener('change', function
       showConfirm(
         'Import data?',
         'This will replace all current board data and goals with the imported file.',
-        () => {
-          // Migrate imported cards to ensure all fields exist
+        async () => {
+          // Migrate imported data
           data.board.cards   = (data.board.cards   || []).map(c => ({ starred: false, archived: false, epicId: null, ...c }));
           data.board.columns = (data.board.columns || []).map(c => ({ hidden: false, ...c }));
           data.board.epics   = (data.board.epics   || []);
-          state = data.board;
-          goalsCache = null;
-          save();
-          saveGoals(data.goals);
+
+          // Cancel any in-flight debounced saves so they don't race with ours
+          clearTimeout(saveTimer);
+          clearTimeout(goalsTimer);
+
+          // Apply locally first so the UI is instant
+          state      = data.board;
+          goalsCache = data.goals;
+          localStorage.setItem(STORAGE_KEY,     JSON.stringify(state));
+          localStorage.setItem(GOALS_CACHE_KEY, JSON.stringify(data.goals));
           render();
           renderGoals();
+
+          // Write directly to Firestore — no debounce, awaited, so the
+          // GitHub-hosted version sees the new content immediately on refresh
+          showSync('saving', 'Uploading…');
+          try {
+            await Promise.all([
+              db.collection('data').doc('board').set(state),
+              db.collection('data').doc('goals').set({ goals: data.goals })
+            ]);
+            showSync('saved', 'Synced ✓');
+          } catch (err) {
+            console.error('Import upload failed:', err);
+            showSync('error', 'Upload failed — saved locally only');
+          }
         }
       );
     } catch {
@@ -5123,10 +5144,38 @@ document.getElementById('import-file-input').addEventListener('change', function
 });
 
 /* ════════════════════════════════════════════════════════════════════
-   INIT — load from Firestore, fall back to localStorage cache
+   INIT — load from Firestore, then keep in sync via real-time listeners
 ═══════════════════════════════════════════════════════════════════ */
+
+// When an onSnapshot fires we apply remote data without writing it back.
+// This flag tells save() to skip the Firestore write for that render cycle.
+let applyingRemote = false;
+
+
+function applyRemoteBoard(data) {
+  const remote = migrateBoard(data);
+  // Skip if data is identical to what we already have
+  if (JSON.stringify(remote) === JSON.stringify(state)) return;
+  // Don't disrupt the user if a card modal is open
+  if (document.getElementById('card-overlay').classList.contains('open')) return;
+  applyingRemote = true;
+  state = remote;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  render();
+  applyingRemote = false;
+  showSync('saved', 'Synced');
+}
+
+function applyRemoteGoals(data) {
+  const remoteGoals = (data.goals || []).map(g => ({ status: 'incomplete', comments: [], ...g }));
+  if (JSON.stringify(remoteGoals) === JSON.stringify(goalsCache)) return;
+  goalsCache = remoteGoals;
+  localStorage.setItem(GOALS_CACHE_KEY, JSON.stringify(remoteGoals));
+  if (document.getElementById('goals-page').classList.contains('active')) renderGoals();
+}
+
 (async function init() {
-  // Render immediately from local cache so the app is usable right away
+  // Render immediately from local cache so the app feels instant
   seedData();
   render();
   renderGoals();
@@ -5147,7 +5196,7 @@ document.getElementById('import-file-input').addEventListener('change', function
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       needRender = true;
     } else if (state.cards.length > 0) {
-      // First time on this browser — push local data up
+      // First time — push local data up to Firestore
       await db.collection('data').doc('board').set(state);
     }
 
@@ -5169,8 +5218,22 @@ document.getElementById('import-file-input').addEventListener('change', function
     }
 
     showSync('saved', 'Synced');
+
+    // ── Real-time listeners ──────────────────────────────────────────
+    // hasPendingWrites is true when THIS client wrote the change — skip
+    // those so we only react to changes from other devices/versions.
+    db.collection('data').doc('board').onSnapshot(snap => {
+      if (!snap.exists || snap.metadata.hasPendingWrites) return;
+      applyRemoteBoard(snap.data());
+    });
+
+    db.collection('data').doc('goals').onSnapshot(snap => {
+      if (!snap.exists || snap.metadata.hasPendingWrites) return;
+      applyRemoteGoals(snap.data());
+    });
+
   } catch(err) {
-    console.error('Firebase load error:', err);
+    console.error('Firebase error:', err);
     showSync('error', 'Offline — local data only');
   }
 })();
