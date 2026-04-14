@@ -1056,6 +1056,17 @@
       box-shadow: 0 0 0 2px var(--accent);
     }
 
+    /* Column highlight pulse when clicked from sidebar */
+    .column.col-highlighted {
+      animation: col-pulse 2s ease-out forwards;
+    }
+
+    @keyframes col-pulse {
+      0%   { box-shadow: 0 0 0 2px var(--accent); background: rgba(108,99,255,.04); }
+      50%  { box-shadow: 0 0 0 2.5px var(--accent), 0 0 20px rgba(108,99,255,.16); background: rgba(108,99,255,.06); }
+      100% { box-shadow: none; background: var(--col-bg); }
+    }
+
     /* Column drag-reorder states */
     .column.col-dragging {
       opacity: .4;
@@ -2189,28 +2200,22 @@
     ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
     /* ── Epic badge on card ─────────────────────────────────────────── */
-    .card-epic-badge {
-      display: inline-flex;
+    .card-epic-line {
+      display: flex;
       align-items: center;
       gap: 4px;
-      font-size: 10px;
-      font-weight: 600;
-      border-radius: 100px;
-      padding: 2px 8px;
-      letter-spacing: .1px;
+      font-size: 11px;
+      font-weight: 500;
       margin-bottom: 5px;
-      max-width: 100%;
       overflow: hidden;
     }
 
-    .card-epic-badge .epic-badge-dot {
-      width: 5px;
-      height: 5px;
-      border-radius: 50%;
+    .card-epic-line .epic-arrow {
       flex-shrink: 0;
+      opacity: .7;
     }
 
-    .card-epic-badge span {
+    .card-epic-line span {
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -2225,8 +2230,8 @@
 
     .sidebar-epic-item {
       display: flex;
-      align-items: center;
-      padding: 6px 20px;
+      align-items: flex-start;
+      padding: 7px 20px;
       cursor: pointer;
       color: rgba(255,255,255,.55);
       font-size: 13px;
@@ -2241,15 +2246,19 @@
       height: 7px;
       border-radius: 50%;
       flex-shrink: 0;
+      margin-top: 4px;
     }
 
     .sidebar-epic-name {
       flex: 1;
       font-weight: 500;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
       min-width: 0;
+      word-break: break-word;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      line-height: 1.45;
     }
 
     .sidebar-epic-count {
@@ -2259,30 +2268,154 @@
       font-weight: 600;
       border-radius: 10px;
       padding: 1px 7px;
+      flex-shrink: 0;
+      margin-top: 2px;
     }
 
-    .sidebar-epic-del {
+    /* Actions wrapper — hidden until hover, takes no space when hidden */
+    .sidebar-epic-actions {
+      display: flex;
+      gap: 2px;
+      flex-shrink: 0;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .15s;
+      margin-top: 0;
+    }
+
+    .sidebar-epic-item:hover .sidebar-epic-actions {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .sidebar-epic-del,
+    .sidebar-epic-edit {
       background: none;
       border: none;
       cursor: pointer;
-      color: rgba(255,255,255,.2);
-      font-size: 16px;
-      width: 18px;
-      height: 18px;
+      color: rgba(255,255,255,.35);
+      font-size: 14px;
+      width: 20px;
+      height: 20px;
       display: flex;
       align-items: center;
       justify-content: center;
       border-radius: 4px;
-      opacity: 0;
-      transition: opacity .15s, color .15s;
+      transition: color .15s, background .15s;
       flex-shrink: 0;
       font-family: 'Inter', sans-serif;
       line-height: 1;
       padding: 0;
     }
 
-    .sidebar-epic-item:hover .sidebar-epic-del { opacity: 1; }
-    .sidebar-epic-del:hover { color: #ef4444 !important; }
+    .sidebar-epic-del:hover  { color: #ef4444 !important; background: rgba(239,68,68,.12); }
+    .sidebar-epic-edit:hover { color: rgba(255,255,255,.9) !important; background: rgba(255,255,255,.1); }
+
+    /* ── Epic edit modal ─────────────────────────────────────────────── */
+    #epic-edit-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.38);
+      z-index: 160;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s;
+      padding: 20px;
+    }
+
+    #epic-edit-overlay.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    #epic-edit-box {
+      background: var(--card-bg);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      width: 100%;
+      max-width: 480px;
+      padding: 24px;
+      transform: scale(.96);
+      transition: transform .2s;
+    }
+
+    #epic-edit-overlay.open #epic-edit-box { transform: scale(1); }
+
+    #epic-edit-box h3 {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 18px;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .epic-edit-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .epic-edit-field { margin-bottom: 14px; }
+
+    .epic-edit-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-3);
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      margin-bottom: 6px;
+    }
+
+    .epic-edit-field input,
+    .epic-edit-field textarea {
+      width: 100%;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 9px 12px;
+      font-size: 13px;
+      font-family: 'Inter', sans-serif;
+      color: var(--text);
+      outline: none;
+      background: var(--card-bg);
+      transition: border-color .15s;
+    }
+
+    .epic-edit-field input:focus,
+    .epic-edit-field textarea:focus { border-color: var(--accent); }
+
+    .epic-edit-field input::placeholder,
+    .epic-edit-field textarea::placeholder { color: var(--text-3); }
+
+    .epic-edit-field textarea {
+      resize: vertical;
+      min-height: 88px;
+      line-height: 1.6;
+    }
+
+    .epic-edit-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 4px;
+    }
+
+    /* ── Epic context strip inside epic view ─────────────────────────── */
+    #epic-view-description {
+      font-size: 13px;
+      color: var(--text-2);
+      line-height: 1.6;
+      padding: 10px 24px 12px;
+      border-bottom: 1px solid var(--border);
+      background: var(--card-bg);
+      white-space: pre-wrap;
+      flex-shrink: 0;
+    }
 
     #btn-add-epic {
       width: calc(100% - 24px);
@@ -2413,7 +2546,24 @@
       align-items: center;
       gap: 6px;
     }
-    #btn-close-epic-view:hover { background: var(--bg); border-color: var(--accent); color: var(--accent); }
+    #btn-close-epic-view:hover,
+    #btn-edit-epic-view:hover { background: var(--bg); border-color: var(--accent); color: var(--accent); }
+
+    #btn-edit-epic-view {
+      background: none;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--text-2);
+      font-family: 'Inter', sans-serif;
+      transition: background .15s, border-color .15s, color .15s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
 
     #epic-view-body {
       flex: 1;
@@ -2757,7 +2907,7 @@
           </select>
         </div>
         <div class="meta-field">
-          <div class="meta-label">Work type</div>
+          <div class="meta-label">State</div>
           <select id="modal-type" class="meta-select">
             <option value="">— None —</option>
             <option value="research">🔍 Research</option>
@@ -2948,12 +3098,39 @@
     <span class="epic-view-dot" id="epic-view-dot"></span>
     <span id="epic-view-title">Epic</span>
     <span id="epic-view-count"></span>
+    <button id="btn-edit-epic-view" title="Edit epic">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 10.5h9M7.5 2l2 2-5.5 5.5H2V8L7.5 2Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
+      Edit
+    </button>
     <button id="btn-close-epic-view">
       <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 11L11 1M1 1l10 10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
       Close
     </button>
   </div>
+  <div id="epic-view-description" style="display:none"></div>
   <div id="epic-view-body"></div>
+</div>
+
+<!-- Epic edit modal -->
+<div id="epic-edit-overlay">
+  <div id="epic-edit-box">
+    <h3>
+      <span class="epic-edit-dot" id="epic-edit-dot"></span>
+      Edit Epic
+    </h3>
+    <div class="epic-edit-field">
+      <div class="epic-edit-label">Name</div>
+      <input type="text" id="epic-edit-name" placeholder="Epic name…" maxlength="60" />
+    </div>
+    <div class="epic-edit-field">
+      <div class="epic-edit-label">Context / Description</div>
+      <textarea id="epic-edit-desc" placeholder="What is this epic about? Goals, scope, links…"></textarea>
+    </div>
+    <div class="epic-edit-actions">
+      <button class="btn-cancel-sm" id="btn-epic-edit-cancel">Cancel</button>
+      <button class="btn-confirm" id="btn-epic-edit-save">Save</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -3008,7 +3185,7 @@ function uid() {
 function migrateBoard(parsed) {
   parsed.cards   = (parsed.cards   || []).map(c => ({ starred: false, archived: false, type: null, epicId: null, ...c }));
   parsed.columns = (parsed.columns || []).map(c => ({ hidden: false, ...c }));
-  parsed.epics   = (parsed.epics   || []);
+  parsed.epics   = (parsed.epics   || []).map(e => ({ description: '', ...e }));
   return parsed;
 }
 
@@ -3138,11 +3315,20 @@ function renderSidebar() {
       <button class="sc-eye" title="${hidden ? 'Show column' : 'Hide column'}">${hidden ? eyeClosed : eyeOpen}</button>
     `;
 
-    // Click on row (not eye) → scroll to column
+    // Click on row (not eye) → scroll to column + highlight it
     el.addEventListener('click', (e) => {
       if (e.target.closest('.sc-eye')) return;
-      if (hidden) return; // can't scroll to a hidden column
-      document.getElementById('col-' + col.id)?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+      if (hidden) return;
+      const colEl = document.getElementById('col-' + col.id);
+      if (colEl) {
+        colEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+        // Flash highlight — remove any existing animation first so it restarts
+        colEl.classList.remove('col-highlighted');
+        void colEl.offsetWidth; // reflow to restart animation
+        colEl.classList.add('col-highlighted');
+        clearTimeout(colEl._highlightTimer);
+        colEl._highlightTimer = setTimeout(() => colEl.classList.remove('col-highlighted'), 2000);
+      }
       const sidebar = document.getElementById('sidebar');
       if (sidebar.classList.contains('open')) toggleSidebar();
     });
@@ -3296,8 +3482,8 @@ function buildCard(card) {
   if (epic) {
     const epicIdx = state.epics.findIndex(e => e.id === epic.id);
     const pair = EPIC_COLOR_PAIRS[Math.abs(epicIdx) % EPIC_COLOR_PAIRS.length];
-    epicBadgeHtml = `<div class="card-epic-badge" style="background:${pair.bg};color:${pair.fg}">
-      <span class="epic-badge-dot" style="background:${pair.color}"></span>
+    epicBadgeHtml = `<div class="card-epic-line" style="color:${pair.fg}">
+      <span class="epic-arrow">→</span>
       <span>${escHtml(epic.name)}</span>
     </div>`;
   }
@@ -3316,13 +3502,7 @@ function buildCard(card) {
       </div>
       ${epicBadgeHtml}
       ${labelsHtml ? `<div class="card-labels">${labelsHtml}</div>` : ''}
-      <div class="card-bottom-row">
-        <span class="priority-badge">
-          <span class="pb-dot" style="background:${priColors[pri]}"></span>
-          ${priLabel[pri]}
-        </span>
-        ${typeChipHtml}
-      </div>
+      ${typeChipHtml ? `<div class="card-bottom-row">${typeChipHtml}</div>` : ''}
       ${thumbsHtml}
       ${linksHtml}
     </div>
@@ -3821,14 +4001,25 @@ function renderSidebarEpics() {
       <span class="sidebar-epic-dot" style="background:${pair.color}"></span>
       <span class="sidebar-epic-name">${escHtml(epic.name)}</span>
       <span class="sidebar-epic-count">${count}</span>
-      <button class="sidebar-epic-del" title="Remove epic" data-epic-id="${epic.id}">×</button>
+      <span class="sidebar-epic-actions">
+        <button class="sidebar-epic-edit" title="Edit epic">
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M1.5 10.5h9M7.5 2l2 2-5.5 5.5H2V8L7.5 2Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="sidebar-epic-del" title="Remove epic">×</button>
+      </span>
     `;
 
     el.addEventListener('click', (e) => {
       if (e.target.closest('.sidebar-epic-del')) return;
+      if (e.target.closest('.sidebar-epic-edit')) return;
       openEpicView(epic.id);
       const sidebar = document.getElementById('sidebar');
       if (sidebar.classList.contains('open')) toggleSidebar();
+    });
+
+    el.querySelector('.sidebar-epic-edit').addEventListener('click', (e) => {
+      e.stopPropagation();
+      openEpicEditModal(epic.id);
     });
 
     el.querySelector('.sidebar-epic-del').addEventListener('click', (e) => {
@@ -3873,7 +4064,7 @@ function showAddEpicInline() {
     const name = input.value.trim();
     if (!name) { input.focus(); return; }
     state.epics = state.epics || [];
-    state.epics.push({ id: uid(), name });
+    state.epics.push({ id: uid(), name, description: '' });
     render();
     hideAddEpicInline();
   }
@@ -3917,6 +4108,55 @@ function closeEpicView() {
 }
 
 document.getElementById('btn-close-epic-view').addEventListener('click', closeEpicView);
+document.getElementById('btn-edit-epic-view').addEventListener('click', () => openEpicEditModal(activeEpicId));
+
+/* ── Epic edit modal ───────────────────────────────────────────── */
+let editingEpicId = null;
+
+function openEpicEditModal(epicId) {
+  const epic = epicById(epicId);
+  if (!epic) return;
+  editingEpicId = epicId;
+
+  const epicIdx = state.epics.findIndex(e => e.id === epicId);
+  const pair    = EPIC_COLOR_PAIRS[Math.abs(epicIdx) % EPIC_COLOR_PAIRS.length];
+
+  document.getElementById('epic-edit-dot').style.background = pair.color;
+  document.getElementById('epic-edit-name').value = epic.name || '';
+  document.getElementById('epic-edit-desc').value = epic.description || '';
+
+  document.getElementById('epic-edit-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('epic-edit-name').focus(), 50);
+}
+
+function closeEpicEditModal() {
+  document.getElementById('epic-edit-overlay').classList.remove('open');
+  editingEpicId = null;
+}
+
+function saveEpicEdit() {
+  const epic = epicById(editingEpicId);
+  if (!epic) { closeEpicEditModal(); return; }
+  const name = document.getElementById('epic-edit-name').value.trim();
+  if (!name) { document.getElementById('epic-edit-name').focus(); return; }
+  epic.name        = name;
+  epic.description = document.getElementById('epic-edit-desc').value.trim();
+  closeEpicEditModal();
+  render(); // render() re-renders epic view automatically if it's open
+}
+
+document.getElementById('btn-epic-edit-save').addEventListener('click', saveEpicEdit);
+document.getElementById('btn-epic-edit-cancel').addEventListener('click', closeEpicEditModal);
+document.getElementById('epic-edit-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('epic-edit-overlay')) closeEpicEditModal();
+});
+document.getElementById('epic-edit-name').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); document.getElementById('epic-edit-desc').focus(); }
+  if (e.key === 'Escape') closeEpicEditModal();
+});
+document.getElementById('epic-edit-desc').addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeEpicEditModal();
+});
 
 function renderEpicView() {
   const epic = epicById(activeEpicId);
@@ -3931,6 +4171,14 @@ function renderEpicView() {
   document.getElementById('epic-view-title').textContent    = epic.name;
   document.getElementById('epic-view-count').textContent    =
     `${epicCards.length} card${epicCards.length !== 1 ? 's' : ''}`;
+
+  const descEl = document.getElementById('epic-view-description');
+  if (epic.description && epic.description.trim()) {
+    descEl.textContent = epic.description;
+    descEl.style.display = '';
+  } else {
+    descEl.style.display = 'none';
+  }
 
   const body = document.getElementById('epic-view-body');
   body.innerHTML = '';
@@ -4376,6 +4624,8 @@ document.addEventListener('keydown', (e) => {
       closeGoalModal();
     } else if (document.getElementById('card-overlay').classList.contains('open')) {
       closeCardModal();
+    } else if (document.getElementById('epic-edit-overlay').classList.contains('open')) {
+      closeEpicEditModal();
     } else if (document.getElementById('epic-view-overlay').classList.contains('open')) {
       closeEpicView();
     }
