@@ -5182,6 +5182,10 @@ function applyRemoteGoals(data) {
 
   showSync('saving', 'Connecting…');
 
+  // Cancel any pending Firestore write queued by the initial render() call above.
+  // We must load the authoritative remote data first — never upload local cache before that.
+  clearTimeout(saveTimer);
+
   try {
     const [boardSnap, goalsSnap] = await Promise.all([
       db.collection('data').doc('board').get(),
