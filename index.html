@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Amir's ToDo List</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%236c63ff'/><rect x='5' y='8' width='6' height='16' rx='2' fill='white'/><rect x='13' y='8' width='6' height='10' rx='2' fill='white'/><rect x='21' y='8' width='6' height='13' rx='2' fill='white'/></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
@@ -116,10 +117,13 @@
     }
 
     .sidebar-section-title {
-      padding: 8px 20px 4px;
+      padding: 8px 12px 4px 20px;
       font-size: 10px;
       font-weight: 600;
       color: rgba(255,255,255,.25);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       letter-spacing: .8px;
       text-transform: uppercase;
     }
@@ -191,23 +195,20 @@
     }
 
     #btn-add-col {
-      width: 100%;
-      background: rgba(255,255,255,.07);
-      border: 1px dashed rgba(255,255,255,.18);
-      color: rgba(255,255,255,.5);
-      font-size: 12px;
-      font-weight: 500;
-      border-radius: var(--radius-sm);
-      padding: 9px 14px;
+      background: none;
+      border: none;
+      color: rgba(255,255,255,.3);
+      border-radius: 4px;
+      padding: 3px 5px;
       cursor: pointer;
       transition: background .15s, color .15s;
-      font-family: 'Inter', sans-serif;
       display: flex;
       align-items: center;
-      gap: 6px;
+      justify-content: center;
+      flex-shrink: 0;
     }
 
-    #btn-add-col:hover { background: rgba(255,255,255,.12); color: rgba(255,255,255,.8); }
+    #btn-add-col:hover { background: rgba(255,255,255,.1); color: rgba(255,255,255,.8); }
 
     .data-actions {
       display: flex;
@@ -1369,20 +1370,31 @@
       flex-wrap: wrap;
     }
 
-    .card-type-chip {
+    .card-state-line {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
       font-size: 10px;
-      font-weight: 600;
-      border-radius: 100px;
-      padding: 2px 7px;
+      font-weight: 500;
+      color: var(--text-2);
       letter-spacing: .1px;
     }
 
-    .card-type-chip.research    { background: #ede9fe; color: #6d28d9; }
-    .card-type-chip.design      { background: #fce7f3; color: #be185d; }
-    .card-type-chip.critique    { background: #fff7ed; color: #c2410c; }
-    .card-type-chip.stakeholder { background: #dcfce7; color: #15803d; }
-    .card-type-chip.handoff     { background: #dbeafe; color: #1d4ed8; }
-    .card-type-chip.strategy    { background: #fef9c3; color: #a16207; }
+    .card-state-line::before {
+      content: '';
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .card-state-line.research::before    { background: #7c3aed; }
+    .card-state-line.design::before      { background: #db2777; }
+    .card-state-line.critique::before    { background: #ea580c; }
+    .card-state-line.stakeholder::before { background: #16a34a; }
+    .card-state-line.handoff::before     { background: #2563eb; }
+    .card-state-line.strategy::before    { background: #ca8a04; }
 
     .priority-badge {
       display: flex;
@@ -2199,20 +2211,22 @@
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
-    /* ── Epic badge on card ─────────────────────────────────────────── */
+    /* ── Epic eyebrow on card (shown above the title) ──────────────── */
     .card-epic-line {
       display: flex;
       align-items: center;
-      gap: 4px;
-      font-size: 11px;
+      gap: 3px;
+      font-size: 10px;
       font-weight: 500;
-      margin-bottom: 5px;
+      color: var(--text-3);
+      margin-bottom: 3px;
       overflow: hidden;
     }
 
     .card-epic-line .epic-arrow {
       flex-shrink: 0;
-      opacity: .7;
+      opacity: .4;
+      font-size: 9px;
     }
 
     .card-epic-line span {
@@ -2765,7 +2779,12 @@
       <div class="ot-label">open<br>tasks</div>
     </div>
     <nav id="sidebar-nav">
-      <div class="sidebar-section-title">Columns</div>
+      <div class="sidebar-section-title">
+        <span>Columns</span>
+        <button id="btn-add-col" title="Add column">
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M5 1v8M1 5h8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+      </div>
       <div id="sidebar-col-list"></div>
       <div class="sidebar-epics-section">
         <div class="sidebar-section-title">Epics</div>
@@ -2777,10 +2796,6 @@
       </div>
     </nav>
     <div id="sidebar-footer">
-      <button id="btn-add-col">
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-        Add column
-      </button>
       <div class="data-actions">
         <button id="btn-export" title="Export all data as JSON">
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v7M3.5 5.5L6 8l2.5-2.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M1.5 9v1a.5.5 0 0 0 .5.5h8a.5.5 0 0 0 .5-.5V9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
@@ -3453,8 +3468,8 @@ function buildCard(card) {
   const priColors = { critical: 'var(--pri-critical)', high: 'var(--pri-high)', medium: 'var(--pri-medium)', low: 'var(--pri-low)' };
   const pri = card.priority || 'medium';
 
-  const TYPE_LABELS = { research: '🔍 Research', design: '🎨 Design', critique: '💬 Critique', stakeholder: '🤝 Stakeholder', handoff: '📦 Handoff', strategy: '🧭 Strategy' };
-  const typeChipHtml = card.type ? `<span class="card-type-chip ${card.type}">${TYPE_LABELS[card.type] || card.type}</span>` : '';
+  const TYPE_LABELS = { research: 'Research', design: 'Design', critique: 'Critique', stakeholder: 'Stakeholder', handoff: 'Handoff', strategy: 'Strategy' };
+  const typeChipHtml = card.type ? `<span class="card-state-line ${card.type}">${TYPE_LABELS[card.type] || card.type}</span>` : '';
 
   const images = card.images || [];
   const thumbsHtml = images.length > 0
@@ -3481,9 +3496,7 @@ function buildCard(card) {
   const epic = card.epicId ? epicById(card.epicId) : null;
   let epicBadgeHtml = '';
   if (epic) {
-    const epicIdx = state.epics.findIndex(e => e.id === epic.id);
-    const pair = EPIC_COLOR_PAIRS[Math.abs(epicIdx) % EPIC_COLOR_PAIRS.length];
-    epicBadgeHtml = `<div class="card-epic-line" style="color:${pair.fg}">
+    epicBadgeHtml = `<div class="card-epic-line">
       <span class="epic-arrow">→</span>
       <span>${escHtml(epic.name)}</span>
     </div>`;
@@ -3492,6 +3505,7 @@ function buildCard(card) {
   el.innerHTML = `
     <span class="card-priority-stripe"></span>
     <div class="card-collapsed">
+      ${epicBadgeHtml}
       <div class="card-top-row">
         <button class="card-star-btn" title="${starTitle}">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="${card.starred ? '#f59e0b' : 'none'}" stroke="${card.starred ? '#f59e0b' : 'currentColor'}" stroke-width="1.4" stroke-linejoin="round">
@@ -3501,7 +3515,6 @@ function buildCard(card) {
         <span class="card-title">${escHtml(card.title)}</span>
         <span class="effort-badge">${escHtml(card.effort || 'M')}</span>
       </div>
-      ${epicBadgeHtml}
       ${labelsHtml ? `<div class="card-labels">${labelsHtml}</div>` : ''}
       ${typeChipHtml ? `<div class="card-bottom-row">${typeChipHtml}</div>` : ''}
       ${thumbsHtml}
