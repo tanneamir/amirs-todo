@@ -236,6 +236,129 @@
 
     .data-actions button:hover { background: rgba(255,255,255,.12); color: rgba(255,255,255,.8); }
 
+    #btn-snapshots {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      width: 100%;
+      margin-top: 6px;
+      background: none;
+      border: none;
+      color: rgba(255,255,255,.5);
+      font-size: 11px;
+      font-family: inherit;
+      padding: 7px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background .15s, color .15s;
+      letter-spacing: .02em;
+    }
+    #btn-snapshots:hover { background: rgba(255,255,255,.08); color: rgba(255,255,255,.8); }
+
+    /* ── Snapshot modal ─────────────────────────────────────────────── */
+    #snapshot-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.45);
+      z-index: 200;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    #snapshot-overlay.open {
+      display: flex;
+    }
+    #snapshot-modal {
+      background: var(--card-bg);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      width: 100%;
+      max-width: 420px;
+      max-height: 80vh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+    #snapshot-modal::-webkit-scrollbar { width: 5px; }
+    #snapshot-modal::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    .snap-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .snap-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .snap-close {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-3);
+      padding: 4px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .snap-close:hover { background: var(--border); color: var(--text); }
+    .snap-desc {
+      font-size: 12px;
+      color: var(--text-3);
+      padding: 12px 20px 8px;
+      line-height: 1.5;
+      border-bottom: 1px solid var(--border);
+    }
+    .snap-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border);
+      gap: 12px;
+    }
+    .snap-item:last-child { border-bottom: none; }
+    .snap-item-info { flex: 1; min-width: 0; }
+    .snap-item-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+    }
+    .snap-item-meta {
+      font-size: 11px;
+      color: var(--text-3);
+      margin-top: 2px;
+    }
+    .snap-restore-btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 6px 14px;
+      font-size: 12px;
+      font-family: inherit;
+      font-weight: 500;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: opacity .15s;
+      flex-shrink: 0;
+    }
+    .snap-restore-btn:hover { opacity: .85; }
+    .snap-empty {
+      padding: 32px 20px;
+      text-align: center;
+      font-size: 13px;
+      color: var(--text-3);
+    }
+
     /* ── Main area ─────────────────────────────────────────────────── */
     #main {
       flex: 1;
@@ -1261,6 +1384,11 @@
     .btn-cancel-sm:hover { background: var(--border); }
 
     /* ── Card ──────────────────────────────────────────────────────── */
+    @keyframes card-in {
+      from { opacity: 0; transform: translateY(7px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
     .card {
       background: var(--card-bg);
       border-radius: var(--radius-md);
@@ -1270,6 +1398,7 @@
       transition: box-shadow .18s, transform .15s;
       user-select: none;
       overflow: hidden;
+      animation: card-in 0.22s ease-out both;
     }
 
     .card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
@@ -2807,8 +2936,29 @@
         </button>
         <input type="file" id="import-file-input" accept=".json" style="display:none" />
       </div>
+      <button id="btn-snapshots" title="Browse auto-snapshots" onclick="openSnapshots()">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.5"/><path d="M6 3.5V6l1.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Snapshots
+      </button>
     </div>
   </aside>
+
+  <!-- Snapshot restore modal -->
+  <div id="snapshot-overlay" onclick="if(event.target===this)closeSnapshots()">
+    <div id="snapshot-modal">
+      <div class="snap-header">
+        <div class="snap-title">
+          <svg width="15" height="15" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.5"/><path d="M6 3.5V6l1.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Auto-Snapshots
+        </div>
+        <button class="snap-close" onclick="closeSnapshots()">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <p class="snap-desc">Snapshots are saved automatically every ~2 seconds when you make changes. Restoring will overwrite the current board.</p>
+      <div id="snapshot-list"></div>
+    </div>
+  </div>
 
   <!-- Main -->
   <div id="main">
@@ -3161,6 +3311,7 @@ firebase.initializeApp({
   appId:             "1:370887367857:web:59877fd6cdb18166edd690"
 });
 const db = firebase.firestore();
+db.enablePersistence({ synchronizeTabs: true }).catch(() => {});
 
 let syncTimeout = null;
 function showSync(status, label) {
@@ -3177,8 +3328,12 @@ function showSync(status, label) {
 /* ════════════════════════════════════════════════════════════════════
    STATE & PERSISTENCE
 ═══════════════════════════════════════════════════════════════════ */
-const STORAGE_KEY = 'amirs-todo-v3';
-const GOALS_CACHE_KEY = 'amirs-goals-v1';
+const STORAGE_KEY      = 'amirs-todo-v3';
+const GOALS_CACHE_KEY  = 'amirs-goals-v1';
+const SNAPSHOTS_KEY    = 'amirs-todo-snapshots-v1';
+const LAST_BACKUP_KEY  = 'amirs-todo-last-backup';
+const SAVE_TS_KEY      = 'amirs-todo-save-ts';     // last save timestamp for tab conflict detection
+const TAB_ID           = uid();                      // unique ID for this tab
 
 function defaultState() {
   return {
@@ -3220,10 +3375,135 @@ function loadLocalBoard() {
 
 let state = loadLocalBoard();
 
-// Debounced Firestore save to avoid hammering on every keystroke
+// Card IDs that have already been animated in — prevents re-animating on every render.
+// Only genuinely new cards (page load first-pass, newly created, new from sync) animate.
+const seenCardIds = new Set();
+
+// ── Snapshot helpers ─────────────────────────────────────────────────────────
+const MAX_SNAPSHOTS = 7;
+
+function saveSnapshot() {
+  try {
+    const snapshots = JSON.parse(localStorage.getItem(SNAPSHOTS_KEY) || '[]');
+    const entry = {
+      ts: Date.now(),
+      label: new Date().toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' }),
+      cards: state.cards.length,
+      data: JSON.stringify(state)
+    };
+    snapshots.unshift(entry);
+    if (snapshots.length > MAX_SNAPSHOTS) snapshots.length = MAX_SNAPSHOTS;
+    localStorage.setItem(SNAPSHOTS_KEY, JSON.stringify(snapshots));
+  } catch(e) {}
+}
+
+function loadSnapshots() {
+  try { return JSON.parse(localStorage.getItem(SNAPSHOTS_KEY) || '[]'); } catch { return []; }
+}
+
+function openSnapshots() {
+  renderSnapshotList();
+  document.getElementById('snapshot-overlay').classList.add('open');
+}
+
+function closeSnapshots() {
+  document.getElementById('snapshot-overlay').classList.remove('open');
+}
+
+function renderSnapshotList() {
+  const snaps = loadSnapshots();
+  const list = document.getElementById('snapshot-list');
+  if (!snaps.length) {
+    list.innerHTML = '<div class="snap-empty">No snapshots yet. They appear automatically after your first edits.</div>';
+    return;
+  }
+  list.innerHTML = snaps.map((s, i) => `
+    <div class="snap-item">
+      <div class="snap-item-info">
+        <div class="snap-item-label">${s.label}</div>
+        <div class="snap-item-meta">${s.cards} card${s.cards !== 1 ? 's' : ''}</div>
+      </div>
+      <button class="snap-restore-btn" onclick="restoreSnapshot(${i})">Restore</button>
+    </div>
+  `).join('');
+}
+
+function restoreSnapshot(index) {
+  const snaps = loadSnapshots();
+  const snap = snaps[index];
+  if (!snap) return;
+  if (!confirm(`Restore snapshot from ${snap.label}?\n\nThis will overwrite your current board with ${snap.cards} card${snap.cards !== 1 ? 's' : ''}. This cannot be undone.`)) return;
+  try {
+    const restored = JSON.parse(snap.data);
+    state = migrateBoard(restored);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    render();
+    renderGoals();
+    closeSnapshots();
+    save();
+    showSync('saved', 'Restored');
+  } catch(e) {
+    alert('Failed to restore snapshot: ' + e.message);
+  }
+}
+
+// ── Daily auto-download ───────────────────────────────────────────────────────
+function maybeAutoBackup() {
+  const today = new Date().toISOString().slice(0, 10);
+  if (localStorage.getItem(LAST_BACKUP_KEY) === today) return;
+  localStorage.setItem(LAST_BACKUP_KEY, today);
+  setTimeout(() => {
+    try {
+      const data = { version: 1, exportedAt: new Date().toISOString(), autoBackup: true, board: state, goals: loadGoals() };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = `amirs-todo-backup-${today}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch(e) {}
+  }, 3000); // slight delay so app is fully loaded first
+}
+
+// ── Tab conflict detection ────────────────────────────────────────────────────
+function getSaveTs() {
+  try { return parseInt(localStorage.getItem(SAVE_TS_KEY) || '0', 10); } catch { return 0; }
+}
+
+let _myLastSaveTs = 0;
+
+function checkTabConflict() {
+  const storedTs = getSaveTs();
+  // If another tab saved more recently, silently load the latest data from storage
+  if (storedTs > _myLastSaveTs + 500) {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) { state = migrateBoard(JSON.parse(raw)); render(); }
+      _myLastSaveTs = storedTs;
+    } catch(e) {}
+    return true; // skip this save — we just loaded newer data
+  }
+  return false;
+}
+
+// ── Debounced Firestore save ─────────────────────────────────────────────────
 let saveTimer = null;
+let _snapshotTimer = null;
+
 function save() {
+  // Tab conflict check — block save if another tab has newer data
+  if (!applyingRemote && checkTabConflict()) return;
+
+  const now = Date.now();
+  _myLastSaveTs = now;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  localStorage.setItem(SAVE_TS_KEY, String(now));
+
+  // Debounced snapshot — take one snapshot per burst of saves, not per keystroke
+  clearTimeout(_snapshotTimer);
+  _snapshotTimer = setTimeout(saveSnapshot, 2000);
+
   if (applyingRemote) return; // remote update — skip Firestore write-back
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
@@ -3432,8 +3712,11 @@ function buildColumn(col) {
     ph.dataset.colId = col.id;
     cardList.appendChild(ph);
   } else {
-    cards.forEach(card => {
-      cardList.appendChild(buildCard(card));
+    cards.forEach((card, i) => {
+      const isNew = !seenCardIds.has(card.id);
+      const el = buildCard(card);
+      if (isNew) el.style.animationDelay = `${i * 28}ms`;
+      cardList.appendChild(el);
     });
   }
   wrap.appendChild(cardList);
@@ -3458,6 +3741,13 @@ function buildCard(card) {
   el.id = 'card-' + card.id;
   el.dataset.cardId = card.id;
   el.dataset.priority = card.priority || 'medium';
+
+  // Suppress animation for cards already rendered once — only genuinely new cards animate.
+  if (seenCardIds.has(card.id)) {
+    el.style.animation = 'none';
+  } else {
+    seenCardIds.add(card.id);
+  }
 
   const labelsHtml = (card.labels || []).map(l => {
     const c = labelColor(l);
@@ -5209,9 +5499,12 @@ function applyRemoteGoals(data) {
 
     if (boardSnap.exists) {
       const remote = migrateBoard(boardSnap.data());
-      state = remote;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      needRender = true;
+      // Only re-render if remote data differs from what's already shown
+      if (JSON.stringify(remote) !== JSON.stringify(state)) {
+        state = remote;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        needRender = true;
+      }
     } else if (state.cards.length > 0) {
       // First time — push local data up to Firestore
       await db.collection('data').doc('board').set(state);
@@ -5234,6 +5527,7 @@ function applyRemoteGoals(data) {
       renderGoals();
     }
 
+    maybeAutoBackup();
     showSync('saved', 'Synced');
 
     // ── Real-time listeners ──────────────────────────────────────────
@@ -5252,6 +5546,7 @@ function applyRemoteGoals(data) {
   } catch(err) {
     console.error('Firebase error:', err);
     showSync('error', 'Offline — local data only');
+    maybeAutoBackup();
   }
 })();
 </script>
